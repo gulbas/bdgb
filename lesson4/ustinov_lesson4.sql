@@ -18,13 +18,23 @@ GROUP BY `depart`.`name`;
 -- 2. Создать функцию, которая найдет менеджера по имени и фамилии.
 DELIMITER $$
 CREATE PROCEDURE `manager_search_by_last_name_and_first_name` (lastname VARCHAR(40), firstname VARCHAR(40)) 
-BEGIN
-SELECT `staff`.`id`, CONCAT(`staff`.`name`, ' ', `staff`.`lastname`) AS `Имя Фамилия`, `depart`.`name`
-AS `Отдел`, `staff`.`position` AS `Должность`, `staff`.`salary` AS `Зарплата` FROM `depart`
-INNER JOIN `staff` ON  `staff`.`depart` = `depart`.`id` 
-WHERE `staff`.`name` = firstname AND `staff`.`lastname` = lastname;
-END$$
+	BEGIN
+		SELECT `staff`.`id`, CONCAT(`staff`.`name`, ' ', `staff`.`lastname`) AS `Имя Фамилия`, `depart`.`name`
+		AS `Отдел`, `staff`.`position` AS `Должность`, `staff`.`salary` AS `Зарплата` FROM `depart`
+		INNER JOIN `staff` ON  `staff`.`depart` = `depart`.`id` 
+		WHERE `staff`.`name` = firstname AND `staff`.`lastname` = lastname;
+	END$$
 DELIMITER ;
 
 -- 3. Создать триггер, который при добавлении нового сотрудника будет выплачивать ему вступительный бонус, занося запись об этом в таблицу salary.
+#Сначала создадим таблицу
+CREATE TABLE IF NOT EXISTS `salary` (
+	`id` INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	`bonus` INT NOT NULL,
+	`id_staff` INT NOT NULL
+);
 
+CREATE TRIGGER `added_bonus`
+AFTER INSERT ON `staff`
+FOR EACH ROW
+INSERT INTO `salary` (`salary`.`bonus`, `salary`.`id_staff`) VALUES (5000, NEW.id);
