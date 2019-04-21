@@ -23,15 +23,18 @@ WHERE `salary` = (SELECT MAX(`salary`) FROM `staff`);
 
 -- 3. Удалить одного сотрудника, у которого максимальная зарплата.
 #1-й способ:
-DELETE FROM `staff` 
-WHERE `salary` = (SELECT * FROM (SELECT MAX(`salary`) FROM `staff`) AS `max salary`);
+DELETE FROM `staff` WHERE `id` = 
+	(SELECT * FROM 
+		(SELECT `id` FROM `staff` WHERE `salary` = 
+			(SELECT MAX(`salary`) FROM `staff`) 
+		LIMIT 1) 
+	AS `temp_table`);
 #2-й способ:
 DELETE FROM `staff`
 ORDER BY `salary` DESC LIMIT 1;
 #3-й способ c переменной:
 SET @id = (SELECT `id` FROM `staff` WHERE `salary` = (SELECT MAX(`salary`) FROM `staff`));
 DELETE FROM `staff` WHERE `id` = @id;
-
 
 -- 4. Посчитать количество сотрудников во всех отделах.
 SELECT `depart`.`name` AS `Отдел`, COUNT(`staff`.`id`) AS `Колисчество сотрудников` FROM `depart` 
