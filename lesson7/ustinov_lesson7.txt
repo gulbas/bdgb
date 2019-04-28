@@ -1,0 +1,17 @@
+-- task 2
+# created backup
+mysqldump -u root -p123123 lesson_3 --routines > /var/backup_mysql_`date '+%Y.%m.%d'`.sql
+# deleted a table
+DROP SCHEMA `lesson_3`;
+# created a schema
+CREATE SCHEMA IF NOT EXISTS `lesson_3`;
+# restored
+mysql -u root -p123123 lesson_3 < /var/backup_mysql_2019.04.28.sql
+
+-- task 1
+# Created new user
+CREATE USER IF NOT EXISTS 'nbsp'@'%' IDENTIFIED WITH mysql_native_password BY '123123';
+# Added usage privileges
+GRANT ALL PRIVILEGES ON `country`.* TO 'nbsp'@'%';
+# Updated privileges
+FLUSH PRIVILEGES;
