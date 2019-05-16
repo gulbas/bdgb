@@ -1,0 +1,140 @@
+CREATE SCHEMA IF NOT EXISTS social_network;
+
+SET search_path TO social_network;
+
+-- 1. Создаем таблицу с пользователями.
+CREATE TABLE users (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(30) NOT NULL
+);
+
+INSERT INTO users (name) VALUES 
+('Sergei'), 
+('Peter'), 
+('Artur'), 
+('Fedor'), 
+('Vlad');
+
+CREATE INDEX name_index ON users(name);
+
+-- 2. Cоздадим сервисы (объекты)
+CREATE TABLE servises (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(25) NOT NULL UNIQUE 
+);
+
+INSERT INTO servises (name) VALUES
+ ('history'),
+ ('profile'),
+ ('photo'),
+ ('comment');
+ 
+CREATE INDEX servises_index ON servises(name);
+	  
+-- 3. Создаем таблицу профиль пользователя
+CREATE TABLE profiles (
+	 id SERIAL PRIMARY KEY,
+	 user_id integer REFERENCES users ON UPDATE CASCADE ON DELETE RESTRICT,
+	 servises_id integer REFERENCES servises ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+INSERT INTO profiles (user_id, servises_id) VALUES
+ (1, 1),
+ (2, 1),
+ (3, 1),
+ (4, 1),
+ (5, 1),
+ (2, 1),
+ (2, 2),
+ (2, 3),
+ (2, 4),
+ (5, 1),
+ (4, 3),
+ (3, 2);
+ 
+CREATE VIEW servises_table AS
+SELECT profiles.id, users.name, servises.name AS servises FROM users
+	 LEFT JOIN profiles
+	 ON users.id = profiles.user_id
+	 JOIN servises
+	 ON profiles.servises_id = servises.id;
+	 
+-- 4. Создаем таблицу с лайками
+CREATE TABLE likes (
+	id SERIAL,
+	user_id integer REFERENCES users ON UPDATE CASCADE ON DELETE RESTRICT,
+	servises_id integer REFERENCES profiles ON UPDATE CASCADE ON DELETE RESTRICT,
+	PRIMARY KEY (user_id, servises_id)
+);
+
+INSERT INTO likes (user_id, servises_id) VALUES
+ (1, 1),
+ (2, 1),
+ (3, 1),
+ (2, 12),
+ (3, 11),
+ (1, 10),
+ (4, 9),
+ (2, 9),
+ (1, 9);
+ 
+CREATE VIEW like_table AS
+SELECT likes.id AS like_id, users.id, users.name,  profiles.id AS servise_id FROM users
+	LEFT JOIN likes
+ 		ON users.id = likes.user_id
+ 	JOIN profiles
+ 		ON likes.servises_id = profiles.id;
+
+CREATE VIEW new_table AS
+SELECT like_table.id, like_table.name, like_table.servise_id, servises_table.name AS holder FROM like_table
+	LEFT JOIN servises_table
+		ON like_table.servise_id = servises_table.id;
+		
+-- 1
+ SELECT id, name, likes_given, likes_got FROM (SELECT id, name, COUNT(servise_id) AS likes_given FROM new_table
+ 	GROUP BY id, name) AS a
+ 		LEFT JOIN (SELECT holder, COUNT(servise_id) AS likes_got FROM new_table
+ 	GROUP BY holder) AS b
+ 	ON a.name = b.holder
+
+-- 2
+SELECT * FROM new_table 
+WHERE holder IN ('Sergei', 'Peter') AND holder NOT IN ('Fedor');
+
+-- redis 
+root@MySQL8:~# redis-cli
+127.0.0.1:6379> multi                 
+OK
+127.0.0.1:6379> set testmay:1:int 1 EX 600
+QUEUED
+127.0.0.1:6379> incr testmay:1:int
+QUEUED
+127.0.0.1:6379> incrby testmay:1:int 20
+QUEUED
+127.0.0.1:6379> decrby testmay:1:int 7
+QUEUED
+127.0.0.1:6379> exec
+1) OK
+2) (integer) 2
+3) (integer) 22
+4) (integer) 15
+
+root@MySQL8:~# redis-cli
+127.0.0.1:6379> rpush test:1:messages "Hello, user!"
+(integer) 4
+127.0.0.1:6379> rpush test:1:messages "Wow!"
+(integer) 5
+127.0.0.1:6379> rpush test:1:messages "What's up?"
+(integer) 6
+127.0.0.1:6379> lrange test:1:messages 0 6
+1) "Wow!"
+2) "What's up?"
+3) "Hello, user!"
+4) "Hello, user!"
+5) "Wow!"
+6) "What's up?"
+
+
+
+
+
